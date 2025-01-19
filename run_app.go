@@ -27,6 +27,10 @@ func (r *Runnable) Start(ctx context.Context, f func(context.Context, string) er
 		return false
 	}
 
+	if !r.isRunning.CompareAndSwap(false, true) {
+		return false
+	}
+
 	ctx, cancel := context.WithCancel(ctx)
 	r.cancel = cancel
 	r.isRunning.Store(true)
@@ -34,7 +38,7 @@ func (r *Runnable) Start(ctx context.Context, f func(context.Context, string) er
 	go func() {
 		defer r.isRunning.Store(false)
 		if err := f(ctx, r.path); err != nil {
-			log.Error().Err(err).Msg("stopped app")
+			log.Error().Err(err).Msg("stopped runnable")
 		}
 	}()
 

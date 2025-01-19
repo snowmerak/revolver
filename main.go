@@ -34,7 +34,7 @@ func main() {
 
 	log.Info().Str("project_path", projectPath).Str("cmd_path", cmdPath).Strs("exts", exts).Msg("checking arguments")
 
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer cancel()
 
 	rb := NewRunnable(cmdPath)
