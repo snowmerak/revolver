@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/exec"
 
@@ -22,7 +21,7 @@ func RunGoApp(ctx context.Context, path string) error {
 	})
 
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("stopped app: %w", err)
+		log.Error().Err(err).Msg("failed to run app")
 	}
 
 	cmd.Process.Wait()
