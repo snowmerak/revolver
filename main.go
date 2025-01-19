@@ -59,7 +59,7 @@ func main() {
 		debounceDuration time.Duration
 	}
 	w.AddEventHandler("restart", WrapWatcherHandler(&DebounceState{
-		debounceDuration: 5 * time.Second,
+		debounceDuration: 2 * time.Second,
 	}, func(ds *DebounceState, e *fsnotify.Event) {
 		if ds.checking.Load() {
 			return
@@ -81,17 +81,6 @@ func main() {
 			}
 		})
 	}))
-
-	errCount := atomic.Int64{}
-	w.AddErrorHandler("log", func(err error) {
-		log.Err(err).Msg("error received")
-		errCount.Add(1)
-
-		if errCount.Load() > 5 {
-			log.Fatal().Msg("too many errors")
-			cancel()
-		}
-	})
 
 	if err := w.Watch(ctx); err != nil {
 		log.Err(err).Msg("failed to start watcher")
