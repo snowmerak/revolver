@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"sync/atomic"
 	"time"
 
@@ -35,12 +34,7 @@ func (r *Runnable) Start(ctx context.Context, f func(context.Context, string) er
 	go func() {
 		defer r.isRunning.Store(false)
 		if err := f(ctx, r.path); err != nil {
-			if !errors.Is(err, context.Canceled) {
-				log.Info().Err(err).Msg("app stopped")
-				return
-			}
-
-			log.Error().Err(err).Msg("failed to run app")
+			log.Error().Err(err).Msg("stopped app")
 		}
 	}()
 
