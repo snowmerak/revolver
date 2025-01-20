@@ -22,7 +22,7 @@ func GetFreeTcpPortEnv(portSet []RevolverPortConfig) (map[string]int, error) {
 			return nil, err
 		}
 
-		env[port.Env] = freePort
+		env[port.Name] = freePort
 	}
 
 	return env, nil
