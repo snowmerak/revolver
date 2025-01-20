@@ -2,11 +2,12 @@ package main
 
 import (
 	"context"
+	"encoding/csv"
+	"fmt"
 	"os"
 	"os/exec"
 	"strings"
 
-	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
 
@@ -24,27 +25,50 @@ func runCommand(ctx context.Context, path string, command string, args ...string
 	return nil
 }
 
-func RunGoApp(ctx context.Context, path string) error {
-	sessionId := strings.ReplaceAll(uuid.New().String(), "-", "")
+func ParseCommand(content string) ([]string, error) {
+	reader := csv.NewReader(strings.NewReader(content))
+	reader.Comma = ' '
+	reader.LazyQuotes = true
 
-	buildFile := "app-" + sessionId
-
-	log.Info().Msg("build new go app")
-	if err := runCommand(ctx, path, "go", "build", "-o", buildFile, "."); err != nil {
-		log.Error().Err(err).Msg("failed to run go app")
+	record, err := reader.Read()
+	if err != nil {
+		return nil, fmt.Errorf("error parsing content: %w", err)
 	}
 
-	log.Info().Msg("run go app")
-	if err := runCommand(ctx, path, "./"+buildFile); err != nil {
-		log.Error().Err(err).Msg("failed to run go app")
+	return record, nil
+}
+
+func RunCommandSet(ctx context.Context, path string, script RevolverScriptConfig) error {
+	preloadCommands, err := ParseCommand(script.Preload)
+	if err != nil {
+		return fmt.Errorf("failed to parse preload commands: %w", err)
 	}
 
-	log.Info().Msg("remove go app file")
-	if err := os.Remove(buildFile); err != nil {
-		log.Error().Err(err).Msg("failed to remove go app")
+	if err := runCommand(ctx, path, preloadCommands[0], preloadCommands[1:]...); err != nil {
+		return fmt.Errorf("failed to run preload command: %w", err)
 	}
 
-	log.Info().Msg("go app stopped")
+	runCommands, err := ParseCommand(script.Run)
+	if err != nil {
+		return fmt.Errorf("failed to parse run commands: %w", err)
+	}
+
+	if err := runCommand(ctx, path, runCommands[0], runCommands[1:]...); err != nil {
+		return fmt.Errorf("failed to run run command: %w", err)
+	}
+
+	context.AfterFunc(ctx, func() {
+		stopCommands, err := ParseCommand(script.CleanUp)
+		if err != nil {
+			log.Error().Err(err).Msg("failed to parse cleanup commands")
+			return
+		}
+
+		if err := runCommand(ctx, path, stopCommands[0], stopCommands[1:]...); err != nil {
+			log.Error().Err(err).Msg("failed to run cleanup command")
+			return
+		}
+	})
 
 	return nil
 }

@@ -12,17 +12,21 @@ type Runnable struct {
 	path      string
 	isRunning atomic.Bool
 	cancel    context.CancelFunc
+	scriptSet RevolverScriptConfig
 }
 
 func (r *Runnable) IsRunning() bool {
 	return r.isRunning.Load()
 }
 
-func NewRunnable(path string) *Runnable {
-	return &Runnable{path: path}
+func NewRunnable(path string, script RevolverScriptConfig) *Runnable {
+	return &Runnable{
+		path:      path,
+		scriptSet: script,
+	}
 }
 
-func (r *Runnable) Start(ctx context.Context, f func(context.Context, string) error) bool {
+func (r *Runnable) Start(ctx context.Context, f func(context.Context, string, RevolverScriptConfig) error) bool {
 	if r.IsRunning() {
 		return false
 	}
@@ -37,7 +41,7 @@ func (r *Runnable) Start(ctx context.Context, f func(context.Context, string) er
 
 	go func() {
 		defer r.isRunning.Store(false)
-		if err := f(ctx, r.path); err != nil {
+		if err := f(ctx, r.path, r.scriptSet); err != nil {
 			log.Error().Err(err).Msg("stopped runnable")
 		}
 	}()
