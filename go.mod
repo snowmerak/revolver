@@ -10,7 +10,10 @@ require (
 	golang.org/x/sys v0.29.0
 )
 
-require gopkg.in/yaml.v3 v3.0.1
+require (
+	github.com/google/uuid v1.6.0
+	gopkg.in/yaml.v3 v3.0.1
+)
 
 require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
