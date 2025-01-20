@@ -43,7 +43,7 @@ func NewTcpReverseProxy(addr string) *TcpReverseProxy {
 	}
 }
 
-func (trp *TcpReverseProxy) RenewDestination(name, addr string) error {
+func (trp *TcpReverseProxy) RenewDestination(name, addr string, cleanup func()) error {
 	tcpAddr, err := net.ResolveTCPAddr("tcp", addr)
 	if err != nil {
 		return err
@@ -73,12 +73,15 @@ func (trp *TcpReverseProxy) RenewDestination(name, addr string) error {
 				trp.destinationsLock.Lock()
 				delete(trp.destinations, latestName)
 				trp.destinationsLock.Unlock()
-				(*cancel.Load())()
+				if cancel.Load() != nil {
+					(*cancel.Load())()
+				}
 			}
 		})
 
 		cl := func() {
 			tm.Stop()
+			cleanup()
 		}
 		cancel.Store(&cl)
 	}()
