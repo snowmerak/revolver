@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -14,6 +15,7 @@ var CommandInitNotFoundFileNameError = errors.New("not found file name")
 
 func CommandInitFunc(args []string) error {
 	if len(args) != 1 {
+		fmt.Printf("Usage: %s %s <filename>\n", os.Args[0], CommandInit)
 		return CommandInitNotFoundFileNameError
 	}
 
