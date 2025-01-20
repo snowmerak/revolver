@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"strconv"
 	"sync/atomic"
 	"time"
 
@@ -14,22 +13,20 @@ type Runnable struct {
 	isRunning atomic.Bool
 	cancel    context.CancelFunc
 	scriptSet RevolverScriptConfig
-	portSet   []RevolverPortConfig
 }
 
 func (r *Runnable) IsRunning() bool {
 	return r.isRunning.Load()
 }
 
-func NewRunnable(path string, script RevolverScriptConfig, port []RevolverPortConfig) *Runnable {
+func NewRunnable(path string, script RevolverScriptConfig) *Runnable {
 	return &Runnable{
 		path:      path,
 		scriptSet: script,
-		portSet:   port,
 	}
 }
 
-func (r *Runnable) Start(ctx context.Context, f func(context.Context, []string, string, RevolverScriptConfig) error) bool {
+func (r *Runnable) Start(ctx context.Context, env []string, f func(context.Context, []string, string, RevolverScriptConfig) error) bool {
 	if r.IsRunning() {
 		return false
 	}
@@ -41,17 +38,6 @@ func (r *Runnable) Start(ctx context.Context, f func(context.Context, []string, 
 	ctx, cancel := context.WithCancel(ctx)
 	r.cancel = cancel
 	r.isRunning.Store(true)
-
-	env := make([]string, 0, len(r.portSet))
-	for _, port := range r.portSet {
-		freePort, err := GetFreeTcpPort()
-		if err != nil {
-			log.Error().Err(err).Msg("failed to get free port")
-			return false
-		}
-
-		env = append(env, port.Env+"="+strconv.FormatInt(int64(freePort), 10))
-	}
 
 	go func() {
 		defer r.isRunning.Store(false)
