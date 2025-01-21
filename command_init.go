@@ -30,6 +30,7 @@ func CommandInitFunc(args []string) error {
 	}
 
 	cfg := RevolverConfig{
+		LogLevel:                LogLevelInfo,
 		ProjectRootFolder:       ".",
 		ExecutablePackageFolder: "cmd/revolver",
 		Ports: []RevolverPortConfig{
