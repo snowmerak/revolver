@@ -65,7 +65,7 @@ func CommandWatchFunc(args []string) error {
 		log.Info().Str("event_data", event.String()).Msg("event received")
 	})
 
-	currentRunnable := NewRunnable(cfg.ProjectRootFolder, cfg.Scripts)
+	currentRunnable := NewRunnable(cfg.ExecutablePackageFolder, cfg.Scripts)
 	processing := atomic.Bool{}
 	wc.AddEventHandler("restart", func(event *fsnotify.Event) {
 		if !processing.CompareAndSwap(false, true) {
@@ -102,7 +102,7 @@ func CommandWatchFunc(args []string) error {
 			}
 		}
 
-		newRunnable := NewRunnable(cfg.ProjectRootFolder, cfg.Scripts)
+		newRunnable := NewRunnable(cfg.ExecutablePackageFolder, cfg.Scripts)
 		if !newRunnable.Start(ctx, os.Environ(), RunCommandSet) {
 			cancel()
 			log.Error().Msg("failed to start new runnable")
