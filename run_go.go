@@ -59,7 +59,7 @@ func RunCommandSet(ctx context.Context, env []string, path string, script Revolv
 	}
 
 	if err := runCommand(ctx, cmdEnv, path, runCommands[0], runCommands[1:]...); err != nil {
-		return fmt.Errorf("failed to run run command: %w", err)
+		return fmt.Errorf("failed to run 'run' command: %w", err)
 	}
 
 	context.AfterFunc(ctx, func() {
