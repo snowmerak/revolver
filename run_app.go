@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"sync/atomic"
 	"time"
 
@@ -48,6 +49,19 @@ func (r *Runnable) Start(ctx context.Context, env []string, f func(context.Conte
 		r.initialized.Store(true)
 		r.isRunning.Store(true)
 		if err := f(ctx, env, r.path, r.scriptSet); err != nil {
+			type ExitError interface {
+				ExitCode() int
+				Exited() bool
+				Error() string
+			}
+			if errors.As(err, new(ExitError)) {
+				log.Debug().Err(err).Msg("failed to run command")
+				return
+			}
+			if errors.Is(err, context.Canceled) {
+				log.Debug().Err(err).Msg("cancelled runnable")
+				return
+			}
 			log.Error().Err(err).Msg("stopped runnable")
 		}
 	}()
