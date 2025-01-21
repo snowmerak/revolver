@@ -47,6 +47,41 @@ revolver watch dev.yaml
 
 This command will start watching the files in the current directory and restart the application when a change is detected.
 
+### ReverseProxy
+
+Revolver can also act as a tcp reverse proxy for your application.  
+This is useful when deploying your application with zero downtime.  
+But revolver is using `proxyprotocol v2` to pass the client's IP address to the application.  
+You must implement the `proxyprotocol v2` in your application.
+
+But your application written in Go can use the `github.com/snowmerak/revolver/listener` package to use the `proxyprotocol v2`.
+
+```bash
+go get github.com/snowmerak/revolver
+```
+
+```go
+package main
+
+import (
+	"github.com/snowmerak/revolver/listener"
+)
+
+func main() {
+	port := os.Getenv("PORT")
+	if port == "" {
+        port = "8080"
+	}
+	
+    ln, err := listener.New("0.0.0.0:" + port)
+	if err != nil {
+        log.Fatal(err)
+    }
+	
+	...
+}
+````
+
 ## Example
 
 If you have a project structure like this:
