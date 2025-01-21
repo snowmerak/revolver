@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"sync/atomic"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/rs/zerolog/log"
@@ -63,7 +64,17 @@ func CommandWatchFunc(args []string) error {
 		log.Info().Str("event_data", event.String()).Msg("event received")
 	})
 
+	currentRunnable := NewRunnable(cfg.ProjectRootFolder, cfg.Scripts)
+	processing := atomic.Bool{}
 	wc.AddEventHandler("restart", func(event *fsnotify.Event) {
+		if !processing.CompareAndSwap(false, true) {
+			return
+		}
+
+		defer processing.Store(false)
+
+		previousRunnable := currentRunnable
+
 		ctx, cancel := context.WithCancel(ctx)
 
 		id, err := NewSession()
@@ -90,7 +101,16 @@ func CommandWatchFunc(args []string) error {
 			}
 		}
 
-		// TODO: implement the rest of the logic here
+		newRunnable := NewRunnable(cfg.ProjectRootFolder, cfg.Scripts)
+		if !newRunnable.Start(ctx, os.Environ(), RunCommandSet) {
+			cancel()
+			log.Error().Msg("failed to start new runnable")
+			return
+		}
+
+		currentRunnable = newRunnable
+
+		previousRunnable.Stop()
 	})
 
 	return nil
