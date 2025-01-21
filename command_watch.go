@@ -64,11 +64,15 @@ func CommandWatchFunc(args []string) error {
 
 	currentRunnable := NewRunnable(cfg.ExecutablePackageFolder, cfg.Scripts)
 	processing := atomic.Bool{}
-	wc.AddEventHandler("restart", func(event *fsnotify.Event) {
+	restartFunc := func(event *fsnotify.Event) {
 		ctx, cancel := context.WithCancel(ctx)
-		defer cancel()
 
-		log.Info().Str("filename", event.Name).Any("op", event.Op).Msg("file changes detected")
+		switch event {
+		case nil:
+			log.Info().Msg("initializing")
+		default:
+			log.Info().Str("filename", event.Name).Any("op", event.Op).Msg("file changes detected")
+		}
 
 		if !processing.CompareAndSwap(false, true) {
 			log.Info().Msg("already processing")
@@ -127,9 +131,9 @@ func CommandWatchFunc(args []string) error {
 		currentRunnable = newRunnable
 
 		previousRunnable.Stop()
-
-		<-ctx.Done()
-	})
+	}
+	restartFunc(nil)
+	wc.AddEventHandler("restart", restartFunc)
 
 	if err := wc.Watch(ctx); err != nil {
 		return fmt.Errorf("failed to start watcher: %w", err)
