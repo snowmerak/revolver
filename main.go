@@ -18,6 +18,7 @@ func main() {
 
 	switch command {
 	case CommandInit:
+		Init(LogLevelDebug)
 		if err := CommandInitFunc(args); err != nil {
 			log.Error().Err(err).Strs("args", args).Msg("failed to run command")
 		}

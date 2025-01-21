@@ -39,6 +39,8 @@ func CommandWatchFunc(args []string) error {
 		return fmt.Errorf("failed to decode yaml: %w", err)
 	}
 
+	Init(cfg.LogLevel)
+
 	log.Info().Str("filename", filename).Any("config", cfg).Msg("watching with config")
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)

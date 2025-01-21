@@ -13,6 +13,7 @@ type RevolverScriptConfig struct {
 }
 
 type RevolverConfig struct {
+	LogLevel                LogLevel             `yaml:"log_level"`
 	ProjectRootFolder       string               `yaml:"root"`
 	ExecutablePackageFolder string               `yaml:"exec"`
 	Ports                   []RevolverPortConfig `yaml:"ports"`
