@@ -76,12 +76,10 @@ func CommandWatchFunc(args []string) error {
 			log.Info().Str("filename", event.Name).Any("op", event.Op).Msg("file changes detected")
 		}
 
-		log.Debug().Bool("processing", processing.Load()).Msg("processing -1")
 		if !processing.CompareAndSwap(false, true) {
 			log.Info().Msg("already processing")
 			return
 		}
-		log.Debug().Bool("processing", processing.Load()).Msg("processing -2")
 
 		log.Info().Msg("processing changes")
 
