@@ -92,6 +92,11 @@ func CommandWatchFunc(args []string) error {
 			return
 		}
 
+		portEnvMap := map[string]string{}
+		for _, port := range cfg.Ports {
+			portEnvMap[port.Name] = port.Env
+		}
+
 		for name, rp := range rpm {
 			if err := rp.RenewDestination(id, "0.0.0.0:"+strconv.FormatInt(int64(portMap[name]), 10), func() {
 				cancel()
@@ -100,6 +105,11 @@ func CommandWatchFunc(args []string) error {
 				log.Error().Err(err).Msg("failed to renew destination")
 				return
 			}
+		}
+
+		env := make([]string, 0, len(portMap))
+		for name, port := range portMap {
+			env = append(env, portEnvMap[name]+"="+strconv.FormatInt(int64(port), 10))
 		}
 
 		newRunnable := NewRunnable(cfg.ExecutablePackageFolder, cfg.Scripts)
