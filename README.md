@@ -12,8 +12,40 @@ go install github.com/snowmerak/revolver@latest
 ## Usage
 
 ```bash
-revolver <project-root-path> <main-package-path> <extensions>...
+revolver <command> <config-file>
 ```
+
+### Init
+
+```bash
+revolver init dev.yaml
+```
+
+This command will create a `dev.yaml` file in the current directory with the following content:
+
+```yaml
+log_level: info
+root: .
+exec: .
+ports:
+  - port: 8080
+    name: http
+    env: PORT
+scripts:
+  preload: go build -o app .
+  run: ./app
+  cleanup: rm app
+exts:
+  - .go
+```
+
+### Watch
+
+```bash
+revolver watch dev.yaml
+```
+
+This command will start watching the files in the current directory and restart the application when a change is detected.
 
 ## Example
 
@@ -27,20 +59,28 @@ If you have a project structure like this:
 └── go.mod
 ```
 
-You can run the following command to hot reload your server:
+You must edit the `dev.yaml` file to match your project structure:
 
-```bash
-revolver . cmd/server
+```yaml
+log_level: info
+root: .
+exec: ./cmd/server
+ports:
+  - port: 8080
+    name: http
+    env: PORT
+scripts:
+  preload: go build -o app .
+  run: ./app
+  cleanup: rm app
+exts:
+  - .go
+  - .mod
+  - .sum
 ```
 
-If your server is using `.go` files and `.html` files, you can run the following command:
+Then you can run the following command:
 
-```bash
-revolver . cmd/server go html
 ```
-
-But `.go` is the default extension, '.go' is not necessary:
-
-```bash
-revolver . cmd/server html
+revolver watch dev.yaml
 ```
