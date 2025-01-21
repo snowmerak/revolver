@@ -69,7 +69,7 @@ func RunCommandSet(ctx context.Context, env []string, path string, script Revolv
 			return
 		}
 
-		if err := runCommand(ctx, cmdEnv, path, stopCommands[0], stopCommands[1:]...); err != nil {
+		if err := runCommand(context.TODO(), cmdEnv, path, stopCommands[0], stopCommands[1:]...); err != nil {
 			log.Error().Err(err).Msg("failed to run cleanup command")
 			return
 		}
