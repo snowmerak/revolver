@@ -136,3 +136,16 @@ COPY . .
 
 CMD ["revolver", "watch", "dev.yaml"]
 ```
+
+```yaml
+version: '3.8'
+service:
+    app:
+        build:
+            context:
+            dockerfile: dev.Dockerfile
+        ports:
+        - 8080:8080
+        volumes:
+        - .:/app
+```
