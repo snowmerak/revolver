@@ -53,6 +53,7 @@ func CommandWatchFunc(args []string) error {
 	for _, port := range cfg.Ports {
 		rp := NewTcpReverseProxy("0.0.0.0:" + strconv.FormatInt(int64(port.Port), 10))
 		go func() {
+			log.Info().Str("port", port.Name).Str("env", port.Env).Int("port", port.Port).Msg("starting reverse proxy")
 			if err := rp.Start(ctx); err != nil {
 				log.Error().Err(err).Msg("failed to start reverse proxy")
 				panic("occurred critical error!!")
@@ -61,22 +62,24 @@ func CommandWatchFunc(args []string) error {
 		rpm[port.Name] = rp
 	}
 
-	wc.AddEventHandler("log", func(event *fsnotify.Event) {
-		log.Info().Str("event_data", event.String()).Msg("event received")
-	})
-
 	currentRunnable := NewRunnable(cfg.ExecutablePackageFolder, cfg.Scripts)
 	processing := atomic.Bool{}
 	wc.AddEventHandler("restart", func(event *fsnotify.Event) {
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+
+		log.Info().Str("filename", event.Name).Any("op", event.Op).Msg("file changes detected")
+
 		if !processing.CompareAndSwap(false, true) {
+			log.Info().Msg("already processing")
 			return
 		}
+
+		log.Info().Msg("processing changes")
 
 		defer processing.Store(false)
 
 		previousRunnable := currentRunnable
-
-		ctx, cancel := context.WithCancel(ctx)
 
 		id, err := NewSession()
 		if err != nil {
@@ -118,11 +121,14 @@ func CommandWatchFunc(args []string) error {
 			log.Error().Msg("failed to start new runnable")
 			return
 		}
+
 		log.Info().Msg("started new runnable")
 
 		currentRunnable = newRunnable
 
 		previousRunnable.Stop()
+
+		<-ctx.Done()
 	})
 
 	if err := wc.Watch(ctx); err != nil {

@@ -80,6 +80,7 @@ func (trp *TcpReverseProxy) RenewDestination(name, addr string, cleanup func()) 
 		})
 
 		cl := func() {
+			log.Info().Str("name", name).Msg("triggered cleanup")
 			tm.Stop()
 			cleanup()
 		}
@@ -116,14 +117,19 @@ func (trp *TcpReverseProxy) Start(ctx context.Context) error {
 	}
 
 	failedCount := 0
+loop:
 	for {
+		log.Debug().Msg("waiting for connection")
 		conn, err := pl.Accept()
-		if err != nil {
+		if err != nil || conn == nil {
+			log.Error().Err(err).Msg("failed to accept connection")
 			failedCount++
 			if failedCount >= 5 {
 				return err
 			}
+			continue loop
 		}
+		log.Debug().Str("address", conn.RemoteAddr().String()).Msg("accepted connection")
 		failedCount = 0
 
 		context.AfterFunc(ctx, func() {
@@ -133,6 +139,10 @@ func (trp *TcpReverseProxy) Start(ctx context.Context) error {
 		})
 
 		go func() {
+			if conn == nil {
+				log.Error().Msg("connection is nil")
+				return
+			}
 			remoteIpValue := conn.RemoteAddr().String()
 			remoteIp, err := net.ResolveTCPAddr("tcp", remoteIpValue)
 			if err != nil {
@@ -145,6 +155,7 @@ func (trp *TcpReverseProxy) Start(ctx context.Context) error {
 			dest := trp.destinations[latestName]
 			trp.destinationsLock.RUnlock()
 			if dest == nil {
+				conn.Close()
 				log.Error().Str("remote_ip", remoteIpValue).Str("latest_name", latestName).Msg("no destination found")
 				return
 			}
@@ -152,15 +163,15 @@ func (trp *TcpReverseProxy) Start(ctx context.Context) error {
 			dest.sessions.Add(1)
 			defer dest.sessions.Add(-1)
 
-			remoteConn, err := net.DialTCP("tcp", remoteIp, dest.addr)
+			destinationConn, err := net.DialTCP("tcp", nil, dest.addr)
 			if err != nil {
+				conn.Close()
 				log.Error().Err(err).Str("remote_ip", remoteIpValue).Str("latest_name", latestName).Str("destination", dest.addr.String()).Msg("failed to dial remote")
 				return
 			}
-			defer remoteConn.Close()
 
 			context.AfterFunc(ctx, func() {
-				remoteConn.Close()
+				destinationConn.Close()
 			})
 
 			protocol := proxyproto.TCPv6
@@ -182,22 +193,26 @@ func (trp *TcpReverseProxy) Start(ctx context.Context) error {
 				},
 			}
 
-			if _, err := header.WriteTo(remoteConn); err != nil {
+			if _, err := header.WriteTo(destinationConn); err != nil {
 				log.Error().Err(err).Str("remote_ip", remoteIpValue).Str("latest_name", latestName).Str("destination", dest.addr.String()).Msg("failed to write header")
 				return
 			}
 
 			go func() {
-				_, err := io.Copy(remoteConn, conn)
+				_, err := io.Copy(destinationConn, conn)
+				destinationConn.Close()
+				conn.Close()
 				if err != nil {
-					log.Error().Err(err).Str("remote_ip", remoteIpValue).Str("latest_name", latestName).Str("destination", dest.addr.String()).Msg("failed to copy to remote")
+					log.Debug().Err(err).Str("remote_ip", remoteIpValue).Str("latest_name", latestName).Str("destination", dest.addr.String()).Msg("failed to copy to destination")
 				}
 			}()
 
 			go func() {
-				_, err = io.Copy(conn, remoteConn)
+				_, err = io.Copy(conn, destinationConn)
+				destinationConn.Close()
+				conn.Close()
 				if err != nil {
-					log.Error().Err(err).Str("remote_ip", remoteIpValue).Str("latest_name", latestName).Str("destination", dest.addr.String()).Msg("failed to copy to local")
+					log.Error().Err(err).Str("remote_ip", remoteIpValue).Str("latest_name", latestName).Str("destination", dest.addr.String()).Msg("failed to copy to remote")
 				}
 			}()
 		}()
