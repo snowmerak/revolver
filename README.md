@@ -1,6 +1,6 @@
 # revolver
 
-Revolver is a simple CLI tool for hot reloading your Go applications.  
+Revolver is a simple CLI tool for live reloading your Go applications.  
 Revolver detects changes in your project files and restarts your application automatically.
 
 ## Installation
