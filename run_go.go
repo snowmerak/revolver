@@ -44,6 +44,19 @@ func RunCommandSet(ctx context.Context, env []string, path string, script Revolv
 	copy(cmdEnv, osEnv)
 	copy(cmdEnv[len(osEnv):], env)
 
+	context.AfterFunc(ctx, func() {
+		stopCommands, err := ParseCommand(script.CleanUp)
+		if err != nil {
+			log.Error().Err(err).Msg("failed to parse cleanup commands")
+			return
+		}
+
+		if err := runCommand(context.TODO(), cmdEnv, path, stopCommands[0], stopCommands[1:]...); err != nil {
+			log.Error().Err(err).Msg("failed to run cleanup command")
+			return
+		}
+	})
+
 	preloadCommands, err := ParseCommand(script.Preload)
 	if err != nil {
 		return fmt.Errorf("failed to parse preload commands: %w", err)
@@ -61,19 +74,6 @@ func RunCommandSet(ctx context.Context, env []string, path string, script Revolv
 	if err := runCommand(ctx, cmdEnv, path, runCommands[0], runCommands[1:]...); err != nil {
 		return fmt.Errorf("failed to run 'run' command: %w", err)
 	}
-
-	context.AfterFunc(ctx, func() {
-		stopCommands, err := ParseCommand(script.CleanUp)
-		if err != nil {
-			log.Error().Err(err).Msg("failed to parse cleanup commands")
-			return
-		}
-
-		if err := runCommand(context.TODO(), cmdEnv, path, stopCommands[0], stopCommands[1:]...); err != nil {
-			log.Error().Err(err).Msg("failed to run cleanup command")
-			return
-		}
-	})
 
 	return nil
 }
