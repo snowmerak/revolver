@@ -113,7 +113,7 @@ func CommandWatchFunc(args []string) error {
 		}
 
 		newRunnable := NewRunnable(cfg.ExecutablePackageFolder, cfg.Scripts)
-		if !newRunnable.Start(ctx, os.Environ(), RunCommandSet) {
+		if !newRunnable.Start(ctx, env, RunCommandSet) {
 			cancel()
 			log.Error().Msg("failed to start new runnable")
 			return
