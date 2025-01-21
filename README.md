@@ -119,3 +119,20 @@ Then you can run the following command:
 ```
 revolver watch dev.yaml
 ```
+
+## Dockerfile
+
+You can also use revolver in a Dockerfile:
+
+```Dockerfile
+FROM docker.io/golang:latest
+
+RUN go install github.com/snowmerak/revolver@latest
+
+WORKDIR /app
+
+COPY . .
+# or MOUNT your project files
+
+CMD ["revolver", "watch", "dev.yaml"]
+```
