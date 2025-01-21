@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"strconv"
 	"sync/atomic"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/rs/zerolog/log"
@@ -112,6 +113,10 @@ func CommandWatchFunc(args []string) error {
 
 		previousRunnable.Stop()
 	})
+
+	<-ctx.Done()
+	log.Info().Msg("shutting down")
+	time.Sleep(5 * time.Second)
 
 	return nil
 }
