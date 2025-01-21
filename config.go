@@ -13,9 +13,9 @@ type RevolverScriptConfig struct {
 }
 
 type RevolverConfig struct {
-	ProjectRootFolder       string                 `yaml:"root"`
-	ExecutablePackageFolder string                 `yaml:"exec"`
-	Ports                   []RevolverPortConfig   `yaml:"ports"`
-	Scripts                 []RevolverScriptConfig `yaml:"scripts"`
-	ObservingExts           []string               `yaml:"exts"`
+	ProjectRootFolder       string               `yaml:"root"`
+	ExecutablePackageFolder string               `yaml:"exec"`
+	Ports                   []RevolverPortConfig `yaml:"ports"`
+	Scripts                 RevolverScriptConfig `yaml:"scripts"`
+	ObservingExts           []string             `yaml:"exts"`
 }
