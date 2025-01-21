@@ -114,6 +114,10 @@ func CommandWatchFunc(args []string) error {
 		previousRunnable.Stop()
 	})
 
+	if err := wc.Watch(ctx); err != nil {
+		return fmt.Errorf("failed to start watcher: %w", err)
+	}
+
 	<-ctx.Done()
 	log.Info().Msg("shutting down")
 	time.Sleep(5 * time.Second)
