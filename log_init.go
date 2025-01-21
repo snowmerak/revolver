@@ -20,6 +20,20 @@ const (
 )
 
 func Init(level LogLevel) {
+	zerologLevel := zerolog.InfoLevel
+	switch level {
+	case LogLevelDebug:
+		zerologLevel = zerolog.DebugLevel
+	case LogLevelInfo:
+		zerologLevel = zerolog.InfoLevel
+	case LogLevelWarn:
+		zerologLevel = zerolog.WarnLevel
+	case LogLevelError:
+		zerologLevel = zerolog.ErrorLevel
+	default:
+		zerologLevel = zerolog.InfoLevel
+	}
+
 	zerolog.TimeFieldFormat = time.RFC3339Nano
 	output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339Nano}
 	output.FormatLevel = func(i interface{}) string {
@@ -34,5 +48,5 @@ func Init(level LogLevel) {
 	output.FormatFieldValue = func(i interface{}) string {
 		return fmt.Sprintf("%s", i)
 	}
-	log.Logger = zerolog.New(output).With().Timestamp().Logger()
+	log.Logger = zerolog.New(output).Level(zerologLevel).With().Timestamp().Logger()
 }
