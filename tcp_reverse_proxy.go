@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net"
 	"sync"
@@ -203,7 +204,11 @@ loop:
 				destinationConn.Close()
 				conn.Close()
 				if err != nil {
-					log.Debug().Err(err).Str("remote_ip", remoteIpValue).Str("latest_name", latestName).Str("destination", dest.addr.String()).Msg("failed to copy to destination")
+					if errors.Is(err, net.ErrClosed) {
+						log.Debug().Err(err).Str("remote_ip", remoteIpValue).Str("latest_name", latestName).Str("destination", dest.addr.String()).Msg("failed to copy to destination")
+					} else {
+						log.Error().Err(err).Str("remote_ip", remoteIpValue).Str("latest_name", latestName).Str("destination", dest.addr.String()).Msg("failed to copy to destination")
+					}
 				}
 			}()
 
@@ -212,7 +217,11 @@ loop:
 				destinationConn.Close()
 				conn.Close()
 				if err != nil {
-					log.Error().Err(err).Str("remote_ip", remoteIpValue).Str("latest_name", latestName).Str("destination", dest.addr.String()).Msg("failed to copy to remote")
+					if errors.Is(err, net.ErrClosed) {
+						log.Debug().Err(err).Str("remote_ip", remoteIpValue).Str("latest_name", latestName).Str("destination", dest.addr.String()).Msg("failed to copy to remote")
+					} else {
+						log.Error().Err(err).Str("remote_ip", remoteIpValue).Str("latest_name", latestName).Str("destination", dest.addr.String()).Msg("failed to copy to remote")
+					}
 				}
 			}()
 		}()
