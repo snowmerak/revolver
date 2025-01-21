@@ -39,12 +39,10 @@ func CommandInitFunc(args []string) error {
 				Env:  "HTTP_PORT",
 			},
 		},
-		Scripts: []RevolverScriptConfig{
-			{
-				Preload: "go build -o app .",
-				Run:     "./app",
-				CleanUp: "rm app",
-			},
+		Scripts: RevolverScriptConfig{
+			Preload: "go build -o app .",
+			Run:     "./app",
+			CleanUp: "rm app",
 		},
 		ObservingExts: []string{".go", ".mod", ".sum"},
 	}
