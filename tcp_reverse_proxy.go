@@ -127,7 +127,9 @@ func (trp *TcpReverseProxy) Start(ctx context.Context) error {
 		failedCount = 0
 
 		context.AfterFunc(ctx, func() {
-			conn.Close()
+			if conn != nil {
+				conn.Close()
+			}
 		})
 
 		go func() {
