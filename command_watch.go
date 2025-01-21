@@ -118,6 +118,7 @@ func CommandWatchFunc(args []string) error {
 			log.Error().Msg("failed to start new runnable")
 			return
 		}
+		log.Info().Msg("started new runnable")
 
 		currentRunnable = newRunnable
 
