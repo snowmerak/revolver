@@ -21,6 +21,12 @@ func main() {
 		if err := CommandInitFunc(args); err != nil {
 			log.Error().Err(err).Strs("args", args).Msg("failed to run command")
 		}
+	case CommandWatch:
+		if err := CommandWatchFunc(args); err != nil {
+			log.Error().Err(err).Strs("args", args).Msg("failed to run command")
+		}
+	default:
+		log.Error().Str("command", command).Msg("unknown command")
 	}
 
 	//log.Info().Str("project_path", projectPath).Str("cmd_path", cmdPath).Strs("exts", exts).Msg("checking arguments")
