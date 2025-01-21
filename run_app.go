@@ -9,14 +9,19 @@ import (
 )
 
 type Runnable struct {
-	path      string
-	isRunning atomic.Bool
-	cancel    context.CancelFunc
-	scriptSet RevolverScriptConfig
+	path        string
+	isRunning   atomic.Bool
+	initialized atomic.Bool
+	cancel      context.CancelFunc
+	scriptSet   RevolverScriptConfig
 }
 
 func (r *Runnable) IsRunning() bool {
 	return r.isRunning.Load()
+}
+
+func (r *Runnable) IsInitialized() bool {
+	return r.initialized.Load()
 }
 
 func NewRunnable(path string, script RevolverScriptConfig) *Runnable {
@@ -37,10 +42,11 @@ func (r *Runnable) Start(ctx context.Context, env []string, f func(context.Conte
 
 	ctx, cancel := context.WithCancel(ctx)
 	r.cancel = cancel
-	r.isRunning.Store(true)
 
 	go func() {
 		defer r.isRunning.Store(false)
+		r.initialized.Store(true)
+		r.isRunning.Store(true)
 		if err := f(ctx, env, r.path, r.scriptSet); err != nil {
 			log.Error().Err(err).Msg("stopped runnable")
 		}
@@ -49,12 +55,18 @@ func (r *Runnable) Start(ctx context.Context, env []string, f func(context.Conte
 	return true
 }
 
-func (r *Runnable) Stop() {
-	if !r.IsRunning() {
-		return
+func (r *Runnable) Stop() bool {
+	if r == nil {
+		return true
+	}
+
+	if !(r.IsRunning() && r.IsInitialized()) {
+		return false
 	}
 
 	r.cancel()
+
+	return true
 }
 
 func (r *Runnable) WaitForStop() {

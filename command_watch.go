@@ -64,7 +64,7 @@ func CommandWatchFunc(args []string) error {
 		rpm[port.Name] = rp
 	}
 
-	currentRunnable := NewRunnable(cfg.ExecutablePackageFolder, cfg.Scripts)
+	currentRunnable := (*Runnable)(nil)
 	processing := atomic.Bool{}
 	restartFunc := func(event *fsnotify.Event) {
 		ctx, cancel := context.WithCancel(ctx)
@@ -76,10 +76,12 @@ func CommandWatchFunc(args []string) error {
 			log.Info().Str("filename", event.Name).Any("op", event.Op).Msg("file changes detected")
 		}
 
+		log.Debug().Bool("processing", processing.Load()).Msg("processing -1")
 		if !processing.CompareAndSwap(false, true) {
 			log.Info().Msg("already processing")
 			return
 		}
+		log.Debug().Bool("processing", processing.Load()).Msg("processing -2")
 
 		log.Info().Msg("processing changes")
 
@@ -132,7 +134,16 @@ func CommandWatchFunc(args []string) error {
 
 		currentRunnable = newRunnable
 
-		previousRunnable.Stop()
+		ticker := time.NewTicker(500 * time.Millisecond)
+	loop:
+		for range ticker.C {
+			log.Debug().Msg("checking previous runnable")
+			if previousRunnable.Stop() {
+				ticker.Stop()
+				log.Info().Msg("stopped previous runnable")
+				break loop
+			}
+		}
 	}
 	restartFunc(nil)
 	wc.AddEventHandler("restart", restartFunc)
