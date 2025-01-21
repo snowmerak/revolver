@@ -123,9 +123,13 @@ loop:
 		log.Debug().Msg("waiting for connection")
 		conn, err := pl.Accept()
 		if err != nil || conn == nil {
-			log.Error().Err(err).Msg("failed to accept connection")
+			log.Debug().Err(err).Msg("failed to accept connection")
 			failedCount++
 			if failedCount >= 5 {
+				if errors.Is(err, net.ErrClosed) {
+					log.Debug().Err(err).Msg("listener closed")
+					return nil
+				}
 				return err
 			}
 			continue loop
